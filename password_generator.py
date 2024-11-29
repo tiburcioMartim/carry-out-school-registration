@@ -1,4 +1,7 @@
-import string, random, csv, os
+import string
+import random
+import csv
+import os
 
 def gerar_senha(tamanho, usar_maiusculo, usar_numeros, usar_especiais):
     caracteres = string.ascii_lowercase
@@ -12,7 +15,7 @@ def gerar_senha(tamanho, usar_maiusculo, usar_numeros, usar_especiais):
     senha = "".join(random.choice(caracteres) for i in range(tamanho))
     return senha
 
-def gerar_log(tamanho, usar_maiusculo, usar_numeros, usar_especiais):
+def gerar_log(tamanho, usar_maiusculo, usar_numeros, usar_especiais, senha):
     if os.path.exists("log.csv"):
         with open("log.csv", "r", newline="") as csvfile:
             reader = csv.reader(csvfile)
@@ -23,6 +26,8 @@ def gerar_log(tamanho, usar_maiusculo, usar_numeros, usar_especiais):
     with open("log.csv", "a", newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow([index, senha])
+
+'''
 
 def main():
     while(input("Deseja criar uma senha? (s/n): ").lower() == "s"):
@@ -47,3 +52,4 @@ def main():
 
 if (__name__ == "__main__"):
     main()
+'''
