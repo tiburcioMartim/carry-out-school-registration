@@ -16,7 +16,6 @@ var_service = Service(ChromeDriverManager().install())
 navegator = webdriver.Chrome(service = var_service)
 
 
-
 ##########[   FUNÇÕES   ]##########
 def cadastro_de_responsavel(nome_do_responsavel, email_do_responsavel, senha):
     navegator.find_element('xpath', '//*[@id="input-15"]').send_keys(nome_do_responsavel)                       # Nome do responsável 
