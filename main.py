@@ -3,15 +3,21 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait, Select
-import time
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import time
 from password_generator import gerar_senha, gerar_log # importando a função do gerador
 
-# Lógica do Selenium
+
+
+##########[   LÓGICA SELENIUM   ]##########
 var_service = Service(ChromeDriverManager().install())
 navegator = webdriver.Chrome(service = var_service)
 
+
+
+##########[   FUNÇÕES   ]##########
 def cadastro_de_responsavel(nome_do_responsavel, email_do_responsavel, senha):
     navegator.find_element('xpath', '//*[@id="input-15"]').send_keys(nome_do_responsavel)                       # Nome do responsável 
     navegator.find_element('xpath', '//*[@id="input-18"]').send_keys(email_do_responsavel)                      # E-mail
@@ -24,6 +30,7 @@ def dados_aluno(nome_do_aluno, data_nascimento, filiacao_1,
                 cpf_da_filiacao_1, filiacao_2, CPF_da_filiacao_2, 
                 email_do_aluno, cor, nacionalidade, uf_nascimento, 
                 municipio_nascimento, fator_rh, procedencia_escola):
+    time.sleep(ESPERAR)
     navegator.find_element('xpath', '//*[@id="input-140"]').send_keys(nome_do_aluno)                # Preenche nome do aluno
     navegator.find_element('xpath', '//*[@id="input-143"]').send_keys(data_nascimento)              # Preenche data de nascimento
     
@@ -127,55 +134,135 @@ def endereco_telefone(cep, uf_atual, municipio_atual, bairro_atual, endereço_at
     navegator.find_element('xpath', '//*[@id="input-500"]').send_keys(telefone_atual_2)
     navegator.find_element('xpath', '//*[@id="app"]/div[1]/div[2]/div/div/div/div/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[2]/div/div[4]/div/div[2]/button').click() # Aperta próximo
 
+def dados_de_cadastro_da_matricula(curso, serie, possui_irmao_na_escola):
+    ######################     DADOS DE CADASTRO DA MATRÍCULA
+    navegator.find_element('xpath', '//*[@id="input-585"]').send_keys(curso)
+    navegator.find_element('xpath', '//*[@id="input-585"]').send_keys(Keys.ENTER)
+    navegator.find_element(By.XPATH, '//*[@id="input-591"]').send_keys(serie)           
+    navegator.find_element(By.XPATH, '//*[@id="input-591"]').send_keys(Keys.ARROW_DOWN) 
+    navegator.find_element(By.XPATH, '//*[@id="input-591"]').send_keys(Keys.ENTER)
+    navegator.find_element('xpath', '//*[@id="app"]/div[1]/div[2]/div/div/div/div/div/div/div/div/div[3]/div/div/div[3]/div[2]/div/span/div[3]/div[1]/div[2]/button').click() # PESQUISAR ESCOLA
+    
+    
+    ########### Escolher a escola em uma variedade de escolas ###########
+    try:        # Aguardar que o usuário escolha uma escola
+        if possui_irmao_na_escola == 's': # SIM     ############# IMPLEMENTAR LÓGICA SEMELHANTE À ELIF ABAIXO
+            navegator.find_element('xpath', '//*[@id="app"]/div[1]/div[2]/div/div/div/div/div/div/div/div/div[3]/div/div/div[3]/div[2]/div/span/div[5]/span/div/div/div/div/div[1]/div/div/div/div/div').click() # SIM
+        
+        elif possui_irmao_na_escola == 'n': # NÃO
+            elemento_escola_selecionada = WebDriverWait(navegator,600).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="app"]/div[1]/div[2]/div/div/div/div/div/div/div/div/div[3]/div/div/div[3]/div[2]/div/span/div[5]/span/div/div/div/div/div[2]/div/div/div/div/div')))  # Colocar o XPath do botão ou elemento que aparece após a seleção da escola    # BOTÃO NÃO
+            elemento_escola_selecionada.click() # Clicar na escola escolhida
+            quebra_de_captcha = WebDriverWait(navegator, 600).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="app"]/div[1]/div[2]/div/div/div/div/div/div/div/div/div[3]/div/div/div[3]/div[2]/div/div[4]/div[2]/button')))  # Colocar o XPath do botão ou elemento que aparece após a quebra do captcha      # Botão Continuar
+            time.sleep(ESPERAR * 3)
+            quebra_de_captcha.click()
+            time.sleep(ESPERAR * 3)
+            navegator.find_element('xpath', '//*[@id="app"]/div[16]/div/div/div[2]/button[1]').click() # CLICAR EM CONFIRMAR
+            
+            input()
+            
+    except TimeoutException as e:
+        print(f'{e} | Tempo esgotado.')
 
-# Gerador de senha
+def main():
+    try:
+        navegator.get('https://matricula.semed.novaiguacu.rj.gov.br/#/inscricaoUsuario')
+        
+        cadastro_de_responsavel(nome_do_responsavel, email_do_responsavel, senha)
+        WebDriverWait(navegator, 1).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="app"]/div/div[2]/div/div/div/div/div[2]/div/span/div/span/div/div/div/div/div[1]/div/div/div/div/div'))) # Aguarda o botão carregar
+        if esta_na_rede_ensino:    # Faz parte do sistema de ensino? SIM SIM SIM
+            navegator.find_element('xpath', '//*[@id="app"]/div/div[2]/div/div/div/div/div[2]/div/span/div/span/div/div/div/div/div[1]/div/div/div/div/div').click() # Aperta sim
+            navegator.find_element('xpath', '//*[@id="app"]/div/div[2]/div/div/div/div/div[2]/div/span/div[2]/span/div/div/div/div/div[3]/div/div/div/div/div').click() # Clica em Nome
+            navegator.find_element('xpath', '//*[@id="input-104"]').send_keys('João Paulo Ferreira')        # Preenche nome do aluno
+            navegator.find_element('xpath', '//*[@id="input-107"]').send_keys('Carolina Da Silva Erreira')  # Preenche nome da filiação 1
+            navegator.find_element('xpath', '//*[@id="input-101"]').send_keys('12022011')                   # Preenche data de nascimento
+            # navegator.find_element('xpath', '//*[@id="recaptcha-anchor"]/div[1]').click() # Clica no eu não sou um robô   ********** QUEBRAR CAPTCHA **********
+            time.sleep(ESPERAR)
+            
+        else: ######## Faz parte do sistema de ensino? NÃO NÃO NÃO
+            navegator.find_element('xpath', '//*[@id="app"]/div/div[2]/div/div/div/div/div[2]/div/span/div/span/div/div/div/div/div[2]/div/div/div/div/div').click() # Aperta não
+            navegator.find_element('xpath', '//*[@id="app"]/div/div[2]/div/div/div/div/div[2]/div/button').click()  # Aperta prosseguir
+            
+            dados_aluno(nome_do_aluno, data_nascimento, filiacao_1, cpf_da_filiacao_1, filiacao_2, CPF_da_filiacao_2, email_do_aluno, cor, nacionalidade, uf_nascimento, municipio_nascimento, fator_rh, procedencia_escola)        
+            documentos(cpf_do_aluno, nis, rg, rg_digito, orgao_expedidor, uf, data_de_emissao)
+            responsavel(vResponsavel, data_nascimento_responsavel_1, email_do_responsavel_1, data_nascimento_responsavel_2, email_do_responsavel_2, cpf_responsavel_outro, nome_do_responsavel_outro, data_nascimento_responsavel_outro, email_do_responsavel_outro)
+            endereco_telefone(cep, uf_atual, municipio_atual, bairro_atual, endereço_atual, numero_atual, complemento_atual, ddd_atual_1, telefone_atual_1, ddd_atual_2, telefone_atual_2)
+            dados_de_cadastro_da_matricula(curso, serie, possui_irmao_na_escola)
+            
+        time.sleep(ESPERAR)
+        
+    except TypeError as e:
+        print(f'Erro: {e}')
+
+
+
+##########[   CONSTANTES   ]##########
+ESPERAR = 1     # segundos
+
+
+
+##########[   GERADOR DE SENHA   ]##########
 tamanho = 12
 usar_maiusculo = True
 usar_numeros = True
 usar_especiais = True
+senha = gerar_senha(tamanho, usar_maiusculo, usar_numeros, usar_especiais)
+gerar_log(tamanho, usar_maiusculo, usar_numeros, usar_especiais, senha)
+
+
 
 ##########[   CADASTRO DE RESPONSÁVEL   ]##########
-nome_do_responsavel = 'Martim Tiburcio'
-email_do_responsavel = 'tiburcio.contato@gmail.com'
+nome_do_responsavel = 'Martim Tiburcio'      # Campo obrigatório
+email_do_responsavel = 'tiago@gmail.com'     # Campo obrigatório
+
+
 
 ##########[   DADOS DINÂMICOS   ]##########
-esta_na_rede_ensino = False                        # implementar vinculo com excel para ser dinâmico
+esta_na_rede_ensino = False                     # implementar vinculo com excel para ser dinâmico   # Campo obrigatório
+
+
 
 ##########[   DADOS DO ALUNO   ]##########
-nome_do_aluno = 'João Paulo Ferreira'.lower()   # implementar vinculo com excel para ser dinâmico
-data_nascimento = '12022011'                    # implementar vinculo com excel para ser dinâmico
-sexo = 'F'.lower()                              # implementar vinculo com excel para ser dinâmico
-filiacao_1 = 'Martim Tiburcio'.lower()          # implementar vinculo com excel para ser dinâmico
-cpf_da_filiacao_1 = '11278784411'.lower()       # implementar vinculo com excel para ser dinâmico
-filiacao_2 = ''.lower()                         # implementar vinculo com excel para ser dinâmico
-CPF_da_filiacao_2 = ''.lower()                  # implementar vinculo com excel para ser dinâmico
-email_do_aluno = 'aluno@gmail.com'.lower()      # implementar vinculo com excel para ser dinâmico
-cor = 'Parda'.lower()                           # implementar vinculo com excel para ser dinâmico
-nacionalidade = 'Brasileira'.lower()            # implementar vinculo com excel para ser dinâmico
-uf_nascimento = 'RJ'.lower()                    # implementar vinculo com excel para ser dinâmico
-municipio_nascimento = 'Nova Iguaçu'.lower()    # implementar vinculo com excel para ser dinâmico
-fator_rh = 'o+'.lower()                         # implementar vinculo com excel para ser dinâmico
-procedencia_escola = 'Outro'.lower()            # implementar vinculo com excel para ser dinâmico
+nome_do_aluno = 'João Paulo Ferreira'.lower()   # implementar vinculo com excel para ser dinâmico   # Campo obrigatório
+data_nascimento = '12022011'                    # implementar vinculo com excel para ser dinâmico   # Campo obrigatório
+sexo = 'F'.lower()                              # implementar vinculo com excel para ser dinâmico   # Campo obrigatório
+filiacao_1 = 'Martim Tiburcio'.lower()          # implementar vinculo com excel para ser dinâmico   # Campo obrigatório
+cpf_da_filiacao_1 = '11278784411'.lower()       # implementar vinculo com excel para ser dinâmico   # Campo obrigatório
+filiacao_2 = ''.lower()                         # implementar vinculo com excel para ser dinâmico           # NÃO obrigatório
+CPF_da_filiacao_2 = ''.lower()                  # implementar vinculo com excel para ser dinâmico           # NÃO obrigatório
+email_do_aluno = 'aluno@gmail.com'.lower()      # implementar vinculo com excel para ser dinâmico           # NÃO obrigatório
+cor = 'Parda'.lower()                           # implementar vinculo com excel para ser dinâmico   # Campo obrigatório
+nacionalidade = 'Brasileira'.lower()            # implementar vinculo com excel para ser dinâmico   # Campo obrigatório
+uf_nascimento = 'RJ'.lower()                    # implementar vinculo com excel para ser dinâmico   # Campo obrigatório
+municipio_nascimento = 'Nova Iguaçu'.lower()    # implementar vinculo com excel para ser dinâmico   # Campo obrigatório
+fator_rh = 'o+'.lower()                         # implementar vinculo com excel para ser dinâmico           # NÃO obrigatório
+procedencia_escola = 'Outro'.lower()            # implementar vinculo com excel para ser dinâmico           # NÃO obrigatório
+pessoa_com_deficiencia = False                  # ATENÇÃO  |  Lógica condicional NÃO implementada   # Campo obrigatório  |  default = Não
+
+
 
 ##########[   DOCUMENTOS   ]##########
-cpf_do_aluno = '39463982604'                              # implementar vinculo com excel para ser dinâmico
-nis = '15375845'                                          # implementar vinculo com excel para ser dinâmico
-rg = '52876857'                                           # implementar vinculo com excel para ser dinâmico
-rg_digito = '3'                                           # implementar vinculo com excel para ser dinâmico
-orgao_expedidor = 'corpo de bombeiros militar'.lower()    # implementar vinculo com excel para ser dinâmico
-uf = 'Rj'.lower()                                         # implementar vinculo com excel para ser dinâmico
-data_de_emissao = '22052023'                              # implementar vinculo com excel para ser dinâmico
+cpf_do_aluno = '39463982604'                              # implementar vinculo com excel para ser dinâmico         # NÃO obrigatório
+nis = '15375845'                                          # implementar vinculo com excel para ser dinâmico         # NÃO obrigatório
+rg = '52876857'                                           # implementar vinculo com excel para ser dinâmico         # NÃO obrigatório
+rg_digito = '3'                                           # implementar vinculo com excel para ser dinâmico         # NÃO obrigatório
+orgao_expedidor = 'corpo de bombeiros militar'.lower()    # implementar vinculo com excel para ser dinâmico         # NÃO obrigatório
+uf = 'Rj'.lower()                                         # implementar vinculo com excel para ser dinâmico         # NÃO obrigatório
+data_de_emissao = '22052023'                              # implementar vinculo com excel para ser dinâmico         # NÃO obrigatório
+
+
 
 ##########[   RESPONSÁVEL   ]##########
-vResponsavel = 'filiação 1'.lower()
-data_nascimento_responsavel_1 = '02101999'      # filiação 1
-email_do_responsavel_1 = 'tiago@gmail.com'      # filiação 1
-data_nascimento_responsavel_2 = '02101999'      # filiação 2
-email_do_responsavel_2 = 'tiago@gmail.com'      # filiação 2
+vResponsavel = 'filiação 1'.lower()                                 # Campo obrigatório
+data_nascimento_responsavel_1 = '02101999'      # filiação 1        # Campo obrigatório
+email_do_responsavel_1 = 'tiago@gmail.com'      # filiação 1                # NÃO obrigatório
+data_nascimento_responsavel_2 = '02101999'      # filiação 2        # Campo obrigatório
+email_do_responsavel_2 = 'tiago@gmail.com'      # filiação 2                # NÃO obrigatório
 cpf_responsavel_outro = '12176567711'           # responsável outro
 nome_do_responsavel_outro = 'Maria Conceição'   # responsável outro
 data_nascimento_responsavel_outro = '02101999'  # responsável outro
 email_do_responsavel_outro = 'tiago@gmail.com'  # responsável outro
+
+
 
 ##########[   ENDEREÇO / TELEFONE   ]##########
 cep = '26253789'                    # Campo obrigatório
@@ -184,68 +271,20 @@ municipio_atual = 'Nova Iguaçu'     # Campo obrigatório
 bairro_atual = 'Posse'              # Campo obrigatório
 endereço_atual = 'Rua do bobo'      # Campo obrigatório
 numero_atual = '0'                  # Campo obrigatório
-complemento_atual = ''
+complemento_atual = ''                      # NÃO obrigatório
 ddd_atual_1 = '21'                  # Campo obrigatório
 telefone_atual_1 = '988880239'      # Campo obrigatório
-ddd_atual_2 = ''
-telefone_atual_2 = ''
+ddd_atual_2 = ''                            # NÃO obrigatório
+telefone_atual_2 = ''                       # NÃO obrigatório
+
+
 
 ##########[   DADOS DE CADASTRO DA MATRÍCULA   ]##########
 curso = 'EDUCAÇÃO DE JOVENS E ADULTOS - EJA'  # Campo obrigatório
 serie = 'FASE II'                             # Campo obrigatório
 possui_irmao_na_escola = 'N'.lower()          # Campo obrigatório
 
-senha = gerar_senha(tamanho, usar_maiusculo, usar_numeros, usar_especiais)
-gerar_log(tamanho, usar_maiusculo, usar_numeros, usar_especiais, senha)
 
-try:
-    navegator.get('https://matricula.semed.novaiguacu.rj.gov.br/#/inscricaoUsuario')
-    
-    cadastro_de_responsavel(nome_do_responsavel, email_do_responsavel, senha)
-    WebDriverWait(navegator, 1).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="app"]/div/div[2]/div/div/div/div/div[2]/div/span/div/span/div/div/div/div/div[1]/div/div/div/div/div'))) # Aguarda o botão carregar
-    if esta_na_rede_ensino:    # Faz parte do sistema de ensino? SIM SIM SIM
-        navegator.find_element('xpath', '//*[@id="app"]/div/div[2]/div/div/div/div/div[2]/div/span/div/span/div/div/div/div/div[1]/div/div/div/div/div').click() # Aperta sim
-        navegator.find_element('xpath', '//*[@id="app"]/div/div[2]/div/div/div/div/div[2]/div/span/div[2]/span/div/div/div/div/div[3]/div/div/div/div/div').click() # Clica em Nome
-        navegator.find_element('xpath', '//*[@id="input-104"]').send_keys('João Paulo Ferreira')        # Preenche nome do aluno
-        navegator.find_element('xpath', '//*[@id="input-107"]').send_keys('Carolina Da Silva Erreira')  # Preenche nome da filiação 1
-        navegator.find_element('xpath', '//*[@id="input-101"]').send_keys('12022011')                   # Preenche data de nascimento
-        # navegator.find_element('xpath', '//*[@id="recaptcha-anchor"]/div[1]').click() # Clica no eu não sou um robô   ********** QUEBRAR CAPTCHA **********
-        time.sleep(1000)
-        
-    else: ######## Faz parte do sistema de ensino? NÃO NÃO NÃO
-        navegator.find_element('xpath', '//*[@id="app"]/div/div[2]/div/div/div/div/div[2]/div/span/div/span/div/div/div/div/div[2]/div/div/div/div/div').click() # Aperta não
-        navegator.find_element('xpath', '//*[@id="app"]/div/div[2]/div/div/div/div/div[2]/div/button').click()  # Aperta prosseguir
-        
-        dados_aluno(nome_do_aluno, data_nascimento, filiacao_1, cpf_da_filiacao_1, filiacao_2, CPF_da_filiacao_2, email_do_aluno, cor, nacionalidade, uf_nascimento, municipio_nascimento, fator_rh, procedencia_escola)        
-        documentos(cpf_do_aluno, nis, rg, rg_digito, orgao_expedidor, uf, data_de_emissao)
-        responsavel(vResponsavel, data_nascimento_responsavel_1, email_do_responsavel_1, data_nascimento_responsavel_2, email_do_responsavel_2, cpf_responsavel_outro, nome_do_responsavel_outro, data_nascimento_responsavel_outro, email_do_responsavel_outro)
-        endereco_telefone(cep, uf_atual, municipio_atual, bairro_atual, endereço_atual, numero_atual, complemento_atual, ddd_atual_1, telefone_atual_1, ddd_atual_2, telefone_atual_2)
-        
-        ######################     DADOS DE CADASTRO DA MATRÍCULA
-        
-        navegator.find_element('xpath', '//*[@id="input-585"]').send_keys(curso)
-        navegator.find_element('xpath', '//*[@id="input-585"]').send_keys(Keys.ENTER)
-        navegator.find_element(By.XPATH, '//*[@id="input-591"]').send_keys(serie)           
-        navegator.find_element(By.XPATH, '//*[@id="input-591"]').send_keys(Keys.ARROW_DOWN) 
-        navegator.find_element(By.XPATH, '//*[@id="input-591"]').send_keys(Keys.ENTER)
-        navegator.find_element('xpath', '//*[@id="app"]/div[1]/div[2]/div/div/div/div/div/div/div/div/div[3]/div/div/div[3]/div[2]/div/span/div[3]/div[1]/div[2]/button').click() # PESQUISAR ESCOLA
 
-        ########### Escolher a escola em uma variedade de escolas ###########
-        
-        
-        time.sleep(1000)
-        if possui_irmao_na_escola == 's': # SIM
-            navegator.find_element('xpath', '//*[@id="app"]/div[1]/div[2]/div/div/div/div/div/div/div/div/div[3]/div/div/div[3]/div[2]/div/span/div[5]/span/div/div/div/div/div[1]/div/div/div/div/div').click() # SIM
-        elif possui_irmao_na_escola == 'n': # NÃO
-            navegator.find_element('xpath', '//*[@id="app"]/div[1]/div[2]/div/div/div/div/div/div/div/div/div[3]/div/div/div[3]/div[2]/div/span/div[5]/span/div/div/div/div/div[2]/div/div/div/div/div').click() # NÃO
-            time.sleep(1000)
-        
-        
-        
-        
-        # navegator.find_element('xpath', '')
-    
-    time.sleep(1000)
-    
-except TypeError as e:
-    print(f'Erro: {e}')
+if __name__ == '__main__':
+    main()
